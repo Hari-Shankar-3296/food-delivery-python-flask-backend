@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 from config import Config
-from models import db, User, Restaurant, Dish
+from models import db, User, Restaurant, Dish, DeliveryPartner
 from services import create_user
 
 app = Flask(__name__)
@@ -20,15 +20,20 @@ def signup():
     password = data.get('password')
     address = data.get('address')
     mobile = data.get('mobile')
+    user_type = data.get('user_type')
 
     if not name or not username or not password:
         return jsonify({'error': 'Name, username, and password are required.'}), 400
 
+    existing_user = Restaurant.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+
     try:
-        create_user(name, username, password, address, mobile)
-        return jsonify({'msg': 'User created successfully.', 'error': ''}), 201
+        create_user(name, username, password, address, mobile, user_type)
+        return jsonify({'data': {'msg': 'User created successfully.', 'error': ''}}), 201
     except Exception as e:
-        return jsonify({'msg': 'Error in creating user', 'error': str(e)}), 500
+        return jsonify({'data': {'msg': 'Error in creating user', 'error': str(e)}}), 500
 
 
 @app.route('/login', methods=['POST'])
@@ -48,6 +53,81 @@ def login():
     # Generate JWT token
     access_token = create_access_token(identity=user.id)
     return jsonify({'data': {'user_token': access_token}}), 200
+
+
+@app.route('/register/restaurant', methods=['POST'])
+@jwt_required()
+def register_restaurant():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    name = data.get('name')
+    mobile = data.get('mobile')
+    address = data.get('address')
+    image_url = data.get('image_url')
+    cuisine = data.get('cuisine')
+    open_time = data.get('open_time')
+    close_time = data.get('close_time')
+
+    # Check if all required fields are present
+    if not username or not password or not name or not mobile or not address or not cuisine or not open_time or not close_time:
+        return jsonify({'data': {'msg': '', 'error': 'All fields are required'}}), 400
+
+    # Check if the username is already taken
+    existing_restaurant = Restaurant.query.filter_by(username=username).first()
+    if existing_restaurant:
+        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+
+    # Create a new restaurant instance
+    new_restaurant = Restaurant(
+        username=username,
+        password=password,
+        name=name,
+        mobile=mobile,
+        address=address,
+        image_url=image_url,
+        cuisine=cuisine,
+        open_time=open_time,
+        close_time=close_time
+    )
+
+    # Add the restaurant to the database
+    db.session.add(new_restaurant)
+    db.session.commit()
+
+    return jsonify({'data': {'msg': 'Restaurant registered successfully', 'error': ''}}), 201
+
+
+@app.route('/register/delivery-partner', methods=['POST'])
+def register_delivery_partner():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    name = data.get('name')
+    mobile = data.get('mobile')
+
+    # Check if all required fields are present
+    if not username or not password or not name or not mobile:
+        return jsonify({'data': {'msg': '', 'error': 'All fields are required'}}), 400
+
+    # Check if the username is already taken
+    existing_delivery_partner = DeliveryPartner.query.filter_by(username=username).first()
+    if existing_delivery_partner:
+        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+
+    # Create a new delivery partner instance
+    new_delivery_partner = DeliveryPartner(
+        username=username,
+        password=password,
+        name=name,
+        mobile=mobile
+    )
+
+    # Add the delivery partner to the database
+    db.session.add(new_delivery_partner)
+    db.session.commit()
+
+    return jsonify({'data': {'msg': 'Delivery partner registered successfully', 'error': ''}}), 201
 
 
 @app.route('/restaurants', methods=['GET'])
@@ -102,6 +182,28 @@ def create_dish(restaurant_id):
     db.session.commit()
 
     return jsonify({'data': {'msg': 'Dish added successfully'}}), 201
+
+
+@app.route('/dishes/<int:restaurant_id>', methods=['GET'])
+@jwt_required()
+def get_dishes(restaurant_id):
+    current_user_id = get_jwt_identity()
+
+    # Fetch dishes for the provided restaurant_id
+    dishes = Dish.query.filter_by(restaurant_id=restaurant_id).all()
+
+    # Construct response data
+    dish_list = [{
+        'id': dish.id,
+        'name': dish.name,
+        'description': dish.description,
+        'image_url': dish.image_url,
+        'price': dish.price,
+        'rating': dish.rating,
+        'restaurant_id': dish.restaurant_id
+    } for dish in dishes]
+
+    return jsonify({'status': 'success', 'data': {'dishes': dish_list}}), 200
 
 
 if __name__ == '__main__':

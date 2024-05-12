@@ -31,14 +31,27 @@ class Restaurant(db.Model):
     address = db.Column(db.String)
     mobile = db.Column(db.String)
     image_url = db.Column(db.String)
-    reviews = db.Column(db.String)
-    distance = db.Column(db.String)
-    expected_delivery_time = db.Column(db.String)
+    reviews = db.Column(db.String, default="Delicious food with reasonable price")
+    distance = db.Column(db.String, default="10 km")
+    expected_delivery_time = db.Column(db.String, default="30 minutes")
     cuisine = db.Column(db.String)
     open_time = db.Column(db.String)
     close_time = db.Column(db.String)
-    ratings = db.Column(db.Double)
+    ratings = db.Column(db.Double, default=4.0)
     offers = db.Column(db.String)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class DeliveryPartner(db.Model):
+    __tablename__ = 'delivery_partners'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String, unique=True)
+    password = db.Column(db.String)
+    name = db.Column(db.String)
+    mobile = db.Column(db.String)
+    rating = db.Column(db.Float, default=4.0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -53,3 +66,5 @@ class Dish(db.Model):
     image_url = db.Column(db.String)
     price = db.Column(db.Float)
     rating = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
