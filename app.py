@@ -25,7 +25,7 @@ def signup():
     if not name or not username or not password:
         return jsonify({'error': 'Name, username, and password are required.'}), 400
 
-    existing_user = Restaurant.query.filter_by(username=username).first()
+    existing_user = User.query.filter_by(username=username).first()
     if existing_user:
         return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
 
