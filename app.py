@@ -149,7 +149,7 @@ def get_restaurants():
                         "cuisine": restaurant.cuisine,
                         "open_time": restaurant.open_time,
                         "close_time": restaurant.close_time,
-                        "ratings": restaurant.ratings,
+                        "rating": restaurant.rating,
                         "offers": restaurant.offers}
                        for restaurant in restaurants]
 

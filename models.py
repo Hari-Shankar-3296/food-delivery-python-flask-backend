@@ -37,7 +37,7 @@ class Restaurant(db.Model):
     cuisine = db.Column(db.String)
     open_time = db.Column(db.String)
     close_time = db.Column(db.String)
-    ratings = db.Column(db.Double, default=4.0)
+    rating = db.Column(db.Double, default=4.0)
     offers = db.Column(db.String)
     created_at = db.Column(db.DateTime, default=datetime.now)
     modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
