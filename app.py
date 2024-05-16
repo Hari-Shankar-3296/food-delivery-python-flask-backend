@@ -12,7 +12,7 @@ db.init_app(app)
 jwt = JWTManager(app)
 
 
-@app.route('/signup', methods=['POST'])
+@app.route('/register/user', methods=['POST'])
 def signup():
     data = request.json
     name = data.get('name')
@@ -42,16 +42,16 @@ def login():
     username = data.get('username')
     password = data.get('password')
     user_type = data.get('user_type')
-	
+
     if not username or not password:
         return jsonify({'error': 'Username and password are required.'}), 400
 
-	if user_type == "RESTAURANT":
-		user = Restaurant.query.filter_by(username=username).first()
-	elif user_type == "DELIVERY_PARTNER":
-		user = DeliveryPartner.query.filter_by(username=username).first()
-	else:
-		user = User.query.filter_by(username=username).first()
+    if user_type == "RESTAURANT":
+        user = Restaurant.query.filter_by(username=username).first()
+    elif user_type == "DELIVERY_PARTNER":
+        user = DeliveryPartner.query.filter_by(username=username).first()
+    else:
+        user = User.query.filter_by(username=username).first()
 
     if not user or not user.password:
         return jsonify({'error': 'Invalid username or password.'}), 401
