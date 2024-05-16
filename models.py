@@ -6,6 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
+restaurant_default_image = 'https://www.google.com/url?sa=i&url=https%3A%2F%2Funsplash.com%2Fs%2Fphotos%2Frestaurant&psig=AOvVaw12009lD8_ktWG7K6quioZz&ust=1715929793904000&source=images&cd=vfe&opi=89978449&ved=2ahUKEwimwO_fzpGGAxU8bmwGHVvAA9QQjRx6BAgAEBY'
+
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -30,7 +32,7 @@ class Restaurant(db.Model):
     name = db.Column(db.String)
     address = db.Column(db.String)
     mobile = db.Column(db.String)
-    image_url = db.Column(db.String, default="https://placehold.co/js/main.js?id=a724dadcca62e6c347623dd51681d1fb")
+    image_url = db.Column(db.String, default=restaurant_default_image)
     reviews = db.Column(db.String, default="Delicious food with reasonable price")
     distance = db.Column(db.String, default="10 km")
     expected_delivery_time = db.Column(db.String, default="30 minutes")
