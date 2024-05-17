@@ -77,12 +77,12 @@ def register_restaurant():
 
     # Check if all required fields are present
     if not username or not password or not name or not mobile or not address or not cuisine or not open_time or not close_time:
-        return jsonify({'data': {'msg': '', 'error': 'All fields are required'}}), 400
+        return jsonify({'msg': '', 'error': 'All fields are required'}), 400
 
     # Check if the username is already taken
     existing_restaurant = Restaurant.query.filter_by(username=username).first()
     if existing_restaurant:
-        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+        return jsonify({'msg': '', 'error': 'Username is already taken'}), 400
 
     # Create a new restaurant instance
     new_restaurant = Restaurant(
@@ -101,7 +101,7 @@ def register_restaurant():
     db.session.add(new_restaurant)
     db.session.commit()
 
-    return jsonify({'data': {'msg': 'Restaurant registered successfully', 'error': ''}}), 201
+    return jsonify({'msg': 'Restaurant registered successfully', 'error': ''}), 201
 
 
 @app.route('/register/delivery-partner', methods=['POST'])
@@ -114,12 +114,12 @@ def register_delivery_partner():
 
     # Check if all required fields are present
     if not username or not password or not name or not mobile:
-        return jsonify({'data': {'msg': '', 'error': 'All fields are required'}}), 400
+        return jsonify({'msg': '', 'error': 'All fields are required'}), 400
 
     # Check if the username is already taken
     existing_delivery_partner = DeliveryPartner.query.filter_by(username=username).first()
     if existing_delivery_partner:
-        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+        return jsonify({'msg': '', 'error': 'Username is already taken'}), 400
 
     # Create a new delivery partner instance
     new_delivery_partner = DeliveryPartner(
@@ -133,7 +133,7 @@ def register_delivery_partner():
     db.session.add(new_delivery_partner)
     db.session.commit()
 
-    return jsonify({'data': {'msg': 'Delivery partner registered successfully', 'error': ''}}), 201
+    return jsonify({'msg': 'Delivery partner registered successfully', 'error': ''}), 201
 
 
 @app.route('/restaurants', methods=['GET'])
@@ -159,7 +159,7 @@ def get_restaurants():
                         "offers": restaurant.offers}
                        for restaurant in restaurants]
 
-    return jsonify({'data': {'restaurants': restaurant_list}}), 200
+    return jsonify({'restaurants': restaurant_list}), 200
 
 
 @app.route('/dishes/<int:restaurant_id>', methods=['POST'])
@@ -169,12 +169,12 @@ def create_dish(restaurant_id):
     # Validate if the restaurant belongs to the current user
     restaurant = Restaurant.query.filter_by(id=restaurant_id).first()
     if not restaurant:
-        return jsonify({'status': 'error', 'data': {'msg': 'Restaurant not found'}}), 404
+        return jsonify({'msg': 'Restaurant not found'}), 404
 
     data = request.json
     dish_data = data.get('dish')
     if not dish_data:
-        return jsonify({'data': {'msg': 'Dish data missing'}}), 400
+        return jsonify({'msg': 'Dish data missing'}), 400
 
     dish = Dish(
         restaurant_id=restaurant_id,
@@ -187,7 +187,7 @@ def create_dish(restaurant_id):
     db.session.add(dish)
     db.session.commit()
 
-    return jsonify({'data': {'msg': 'Dish added successfully'}}), 201
+    return jsonify({'msg': 'Dish added successfully'}), 201
 
 
 @app.route('/dishes/<int:restaurant_id>', methods=['GET'])
@@ -209,7 +209,7 @@ def get_dishes(restaurant_id):
         'restaurant_id': dish.restaurant_id
     } for dish in dishes]
 
-    return jsonify({'status': 'success', 'data': {'dishes': dish_list}}), 200
+    return jsonify({'dishes': dish_list}), 200
 
 
 if __name__ == '__main__':
