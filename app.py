@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 from config import Config
-from models import db, User, Restaurant, Dish, DeliveryPartner
+from models import db, User, Restaurant, Dish, DeliveryPartner, Order, DishesOrdered
 from services import create_user
 
 app = Flask(__name__)
@@ -210,6 +210,76 @@ def get_dishes(restaurant_id):
     } for dish in dishes]
 
     return jsonify({'dishes': dish_list}), 200
+
+
+@app.route('/dishes/<int:restaurant_id>', methods=['PUT'])
+@jwt_required()
+def edit_dish(restaurant_id):
+    current_user_id = get_jwt_identity()
+
+    # Fetch data from request
+    data = request.json
+    dish_id = data.get('dish_id')
+    dish_data = data.get('dish')
+
+    # Validate if all required fields are present
+    if not dish_id or not dish_data:
+        return jsonify({'msg': '', 'error': 'Dish ID and dish data are required'}), 400
+
+    # Check if the dish exists
+    dish = Dish.query.filter_by(id=dish_id, restaurant_id=restaurant_id).first()
+    if not dish:
+        return jsonify({'msg': '', 'error': 'Dish not found'}), 404
+
+    # Update dish details
+    dish.name = dish_data.get('name', dish.name)
+    dish.description = dish_data.get('description', dish.description)
+    dish.image_url = dish_data.get('image_url', dish.image_url)
+    dish.price = dish_data.get('price', dish.price)
+
+    # Commit changes to the database
+    db.session.commit()
+
+    return jsonify({'msg': 'Dish updated successfully'}), 200
+
+
+@app.route('/order_now', methods=['POST'])
+@jwt_required()
+def order_now():
+    user_id = get_jwt_identity()
+    data = request.json
+    restaurant_id = data.get('restaurant_id')
+    dish_ids = data.get('dish_ids')
+    total_price = data.get('total_price')
+
+    # Validate if all required fields are present
+    if not restaurant_id or not dish_ids or not total_price:
+        return jsonify({'msg': '', 'error': 'Restaurant ID, dish IDs, and total price are required'}), 400
+
+    # Create a new order instance
+    new_order = Order(
+        restaurant_id=restaurant_id,
+        user_id=user_id,
+        total=total_price,
+        status='PAID'  # Assuming the order is paid by default
+    )
+
+    # Add the order to the database
+    db.session.add(new_order)
+    db.session.commit()
+
+    for dish_id in dish_ids:
+        dish = Dish.query.get(dish_id)
+        if dish:
+            new_dishes_ordered = DishesOrdered(
+                dish_id=dish_id,
+                order_id=new_order.id
+            )
+            db.session.add(new_dishes_ordered)
+
+    db.session.commit()
+
+    return jsonify({'order_id': new_order.id, 'order_status': new_order.status}), 201
 
 
 if __name__ == '__main__':

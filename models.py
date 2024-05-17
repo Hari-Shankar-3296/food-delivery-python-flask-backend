@@ -7,6 +7,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 restaurant_default_image = 'https://www.google.com/url?sa=i&url=https%3A%2F%2Funsplash.com%2Fs%2Fphotos%2Frestaurant&psig=AOvVaw12009lD8_ktWG7K6quioZz&ust=1715929793904000&source=images&cd=vfe&opi=89978449&ved=2ahUKEwimwO_fzpGGAxU8bmwGHVvAA9QQjRx6BAgAEBY'
+# order_dish_association = db.Table('order_dish_association',
+#                                   db.Column('order_id', db.Integer, db.ForeignKey('orders.id'), primary_key=True),
+#                                   db.Column('dish_id', db.Integer, db.ForeignKey('dishes.id'), primary_key=True)
+#                                   )
 
 
 class User(db.Model):
@@ -70,3 +74,21 @@ class Dish(db.Model):
     rating = db.Column(db.Float, default=4.0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+
+    id = db.Column(db.Integer, primary_key=True)
+    restaurant_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer)
+    total = db.Column(db.Float)
+    status = db.Column(db.String, default='PAID')
+
+
+class DishesOrdered(db.Model):
+    __tablename__ = 'dishes_ordered'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer)
+    dish_id = db.Column(db.Integer)
