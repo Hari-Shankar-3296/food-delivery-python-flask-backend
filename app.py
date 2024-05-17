@@ -42,6 +42,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     user_type = data.get('user_type')
+    membership_type = ''
 
     if not username or not password:
         return jsonify({'error': 'Username and password are required.'}), 400
@@ -52,13 +53,21 @@ def login():
         user = DeliveryPartner.query.filter_by(username=username).first()
     else:
         user = User.query.filter_by(username=username).first()
+        membership_type = user.type
 
     if not user or not user.password:
         return jsonify({'error': 'Invalid username or password.'}), 401
 
     # Generate JWT token
     access_token = create_access_token(identity=user.id)
-    return jsonify({'user_token': access_token}), 200
+    return jsonify({
+        'user_token': access_token,
+        'user_details': {
+            'id': user.id,
+            'name': user.name,
+            'user_type': user_type,
+            'membership_type': membership_type,
+        }}), 200
 
 
 @app.route('/register/restaurant', methods=['POST'])
