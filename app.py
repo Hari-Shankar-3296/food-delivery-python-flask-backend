@@ -27,13 +27,13 @@ def signup():
 
     existing_user = User.query.filter_by(username=username).first()
     if existing_user:
-        return jsonify({'data': {'msg': '', 'error': 'Username is already taken'}}), 400
+        return jsonify({'msg': '', 'error': 'Username is already taken'}), 400
 
     try:
         create_user(name, username, password, address, mobile, user_type)
-        return jsonify({'data': {'msg': 'User created successfully.', 'error': ''}}), 201
+        return jsonify({'msg': 'User created successfully.', 'error': ''}), 201
     except Exception as e:
-        return jsonify({'data': {'msg': 'Error in creating user', 'error': str(e)}}), 500
+        return jsonify({'msg': 'Error in creating user', 'error': str(e)}), 500
 
 
 @app.route('/login', methods=['POST'])
@@ -58,7 +58,7 @@ def login():
 
     # Generate JWT token
     access_token = create_access_token(identity=user.id)
-    return jsonify({'data': {'user_token': access_token}}), 200
+    return jsonify({'user_token': access_token}), 200
 
 
 @app.route('/register/restaurant', methods=['POST'])
