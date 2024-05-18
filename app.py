@@ -1,6 +1,7 @@
 # app.py
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_cors import CORS
 
 from config import Config
 from models import db, User, Restaurant, Dish, DeliveryPartner, Order, DishesOrdered
@@ -10,6 +11,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
+CORS(app)
 
 
 @app.route('/register/user', methods=['POST'])
@@ -206,6 +208,7 @@ def get_dishes(restaurant_id):
 
     # Fetch dishes for the provided restaurant_id
     dishes = Dish.query.filter_by(restaurant_id=restaurant_id).all()
+    restaurant = Restaurant.query.filter_by(id=restaurant_id).first()
 
     # Construct response data
     dish_list = [{
@@ -218,7 +221,22 @@ def get_dishes(restaurant_id):
         'restaurant_id': dish.restaurant_id
     } for dish in dishes]
 
-    return jsonify({'dishes': dish_list}), 200
+    return jsonify({'dishes': dish_list,
+                    'restaurant': {
+                        'id': restaurant.id,
+                        "name": restaurant.name,
+                        "mobile": restaurant.mobile,
+                        "address": restaurant.address,
+                        "image_url": restaurant.image_url,
+                        "reviews": restaurant.reviews,
+                        "distance": restaurant.distance,
+                        "expected_delivery_time": restaurant.expected_delivery_time,
+                        "cuisine": restaurant.cuisine,
+                        "open_time": restaurant.open_time,
+                        "close_time": restaurant.close_time,
+                        "rating": restaurant.rating,
+                        "offers": restaurant.offers
+                    }}), 200
 
 
 @app.route('/dishes/<int:restaurant_id>', methods=['PUT'])
