@@ -85,6 +85,8 @@ class Order(db.Model):
     delivery_partner_id = db.Column(db.Integer)
     total = db.Column(db.Float)
     status = db.Column(db.String, default='PAID')
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    modified_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class DishesOrdered(db.Model):
