@@ -1,5 +1,5 @@
 # app.py
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -61,7 +61,7 @@ def login():
         return jsonify({'error': 'Invalid username or password.'}), 401
 
     # Generate JWT token
-    access_token = create_access_token(identity=user.id)
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=24))
     return jsonify({
         'user_token': access_token,
         'user_details': {
@@ -262,10 +262,17 @@ def order_now():
     restaurant_id = data.get('restaurant_id')
     dish_ids = data.get('dish_ids')
     total_price = data.get('total_price')
+    user_type = data.get('user_type')
 
     # Validate if all required fields are present
     if not restaurant_id or not dish_ids or not total_price:
         return jsonify({'msg': '', 'error': 'Restaurant ID, dish IDs, and total price are required'}), 400
+
+    if user_type:
+        user = User.query.filter_by(id=user_id).first()
+        user.type = user_type
+        db.session.add(user)
+        db.session.commit()
 
     # Create a new order instance
     new_order = Order(
@@ -362,7 +369,6 @@ def update_order_status(order_id):
 
     if new_status == 'REST_ACCEPTED':
         delivery_partner = DeliveryPartner.query.first()
-        print(delivery_partner.id)
         order.delivery_partner_id = delivery_partner.id
 
     # Update the order status
@@ -429,6 +435,214 @@ def get_order(order_id):
             'restaurant_id': dish.restaurant_id,
             'rating': dish.rating,
         } for dish in dishes]
+    }
+
+    return jsonify({'data': response_data}), 200
+
+
+@app.route('/restaurant/orders/<int:restaurant_id>', methods=['GET'])
+@jwt_required()
+def get_orders_by_restaurant(restaurant_id):
+    user_id = get_jwt_identity()
+
+    # Fetch the restaurant
+    restaurant = Restaurant.query.get(restaurant_id)
+    if not restaurant:
+        return jsonify({'msg': '', 'error': 'Restaurant not found'}), 404
+
+    # Fetch all orders for the given restaurant
+    orders = Order.query.filter_by(restaurant_id=restaurant_id).all()
+    if not orders:
+        return jsonify({'msg': '', 'error': 'No orders found for the given restaurant'}), 404
+
+    orders_data = []
+    for order in orders:
+        user = User.query.filter_by(id=user_id).first()
+        delivery_partner = DeliveryPartner.query.filter_by(id=order.delivery_partner_id).first()
+        dishes_ordered = DishesOrdered.query.filter_by(order_id=order.id).all()
+        dishes = [Dish.query.get(dish_ordered.dish_id) for dish_ordered in dishes_ordered]
+
+        order_data = {
+            'order': {
+                'total': order.total,
+                'status': order.status,
+                'order_date': order.created_at,
+                'id': order.id,
+            },
+            'user': {
+                'address': user.address,
+                'name': user.name,
+                'mobile': user.mobile,
+                'id': user.id,
+            },
+            'delivery_partner': {
+                'name': delivery_partner.name if delivery_partner else None,
+                'mobile': delivery_partner.mobile if delivery_partner else None,
+                'id': delivery_partner.id if delivery_partner else None
+            },
+            'dishes': [{
+                'id': dish.id,
+                'name': dish.name,
+                'description': dish.description,
+                'image_url': dish.image_url,
+                'price': dish.price,
+                'restaurant_id': dish.restaurant_id,
+            } for dish in dishes]
+        }
+        orders_data.append(order_data)
+
+    response_data = {
+        'restaurant': {
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'distance': restaurant.distance,
+            'mobile': restaurant.mobile,
+            'address': restaurant.address,
+            'rating': restaurant.rating,
+            'image_url': restaurant.image_url,
+            'expected_delivery_time': restaurant.expected_delivery_time,
+            'opens_at': restaurant.open_time,
+            'closes_at': restaurant.close_time
+        },
+        'orders': orders_data
+    }
+
+    return jsonify({'data': response_data}), 200
+
+
+@app.route('/delivery_partner/orders/<int:delivery_partner_id>', methods=['GET'])
+@jwt_required()
+def get_orders_by_delivery_partner(delivery_partner_id):
+    user_id = get_jwt_identity()
+
+    # Fetch the delivery partner
+    delivery_partner = DeliveryPartner.query.get(delivery_partner_id)
+    if not delivery_partner:
+        return jsonify({'msg': '', 'error': 'Delivery partner not found'}), 404
+
+    # Fetch all orders for the given delivery partner
+    orders = Order.query.filter_by(delivery_partner_id=delivery_partner_id).all()
+    if not orders:
+        return jsonify({'msg': '', 'error': 'No orders found for the delivery partner'}), 404
+
+    orders_data = []
+    for order in orders:
+        user = User.query.filter_by(id=user_id).first()
+        restaurant = Restaurant.query.filter_by(id=order.restaurant_id).first()
+        dishes_ordered = DishesOrdered.query.filter_by(order_id=order.id).all()
+        dishes = [Dish.query.get(dish_ordered.dish_id) for dish_ordered in dishes_ordered]
+
+        order_data = {
+            'order': {
+                'total': order.total,
+                'status': order.status,
+                'order_date': order.created_at,
+                'id': order.id,
+            },
+            'user': {
+                'address': user.address,
+                'name': user.name,
+                'mobile': user.mobile,
+                'id': user.id,
+            },
+            'restaurant': {
+                'id': restaurant.id,
+                'name': restaurant.name,
+                'distance': restaurant.distance,
+                'mobile': restaurant.mobile,
+                'address': restaurant.address,
+                'rating': restaurant.rating,
+                'image_url': restaurant.image_url,
+                'expected_delivery_time': restaurant.expected_delivery_time,
+                'opens_at': restaurant.open_time,
+                'closes_at': restaurant.close_time
+            },
+            'dishes': [{
+                'id': dish.id,
+                'name': dish.name,
+                'description': dish.description,
+                'image_url': dish.image_url,
+                'price': dish.price,
+                'restaurant_id': dish.restaurant_id,
+            } for dish in dishes]
+        }
+        orders_data.append(order_data)
+
+    response_data = {
+        'delivery_partner': {
+            'name': delivery_partner.name,
+            'mobile': delivery_partner.mobile,
+            'id': delivery_partner.id
+        },
+        'orders': orders_data
+    }
+
+    return jsonify({'data': response_data}), 200
+
+
+@app.route('/users/orders/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_orders_by_user(user_id):
+    # Fetch the user
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'msg': '', 'error': 'User not found'}), 404
+
+    # Fetch all orders for the given user
+    orders = Order.query.filter_by(user_id=user_id).all()
+    if not orders:
+        return jsonify({'msg': '', 'error': 'No orders found for the user'}), 404
+
+    orders_data = []
+    for order in orders:
+        restaurant = Restaurant.query.filter_by(id=order.restaurant_id).first()
+        delivery_partner = DeliveryPartner.query.filter_by(id=order.delivery_partner_id).first()
+        dishes_ordered = DishesOrdered.query.filter_by(order_id=order.id).all()
+        dishes = [Dish.query.get(dish_ordered.dish_id) for dish_ordered in dishes_ordered]
+
+        order_data = {
+            'order': {
+                'total': order.total,
+                'status': order.status,
+                'order_date': order.created_at,
+                'id': order.id,
+            },
+            'delivery_partner': {
+                'name': delivery_partner.name if delivery_partner else None,
+                'mobile': delivery_partner.mobile if delivery_partner else None,
+                'id': delivery_partner.id if delivery_partner else None
+            },
+            'restaurant': {
+                'id': restaurant.id,
+                'name': restaurant.name,
+                'distance': restaurant.distance,
+                'mobile': restaurant.mobile,
+                'address': restaurant.address,
+                'rating': restaurant.rating,
+                'image_url': restaurant.image_url,
+                'expected_delivery_time': restaurant.expected_delivery_time,
+                'opens_at': restaurant.open_time,
+                'closes_at': restaurant.close_time
+            },
+            'dishes': [{
+                'id': dish.id,
+                'name': dish.name,
+                'description': dish.description,
+                'image_url': dish.image_url,
+                'price': dish.price,
+                'restaurant_id': dish.restaurant_id,
+            } for dish in dishes]
+        }
+        orders_data.append(order_data)
+
+    response_data = {
+        'user': {
+            'address': user.address,
+            'name': user.name,
+            'mobile': user.mobile,
+            'id': user.id,
+        },
+        'orders': orders_data
     }
 
     return jsonify({'data': response_data}), 200
