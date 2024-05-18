@@ -1,4 +1,6 @@
 # app.py
+from datetime import datetime
+
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
@@ -307,6 +309,147 @@ def order_now():
     db.session.commit()
 
     return jsonify({'order_id': new_order.id, 'order_status': new_order.status}), 201
+
+
+@app.route('/restaurants/<int:restaurant_id>', methods=['PUT'])
+@jwt_required()
+def update_restaurant(restaurant_id):
+    data = request.json
+
+    # Fetch the restaurant from the database
+    restaurant = Restaurant.query.get(restaurant_id)
+    if not restaurant:
+        return jsonify({'msg': '', 'error': 'Restaurant not found'}), 404
+
+    # Update the restaurant details
+    restaurant.username = data.get('username', restaurant.username)
+    restaurant.password = data.get('password', restaurant.password)
+    restaurant.name = data.get('name', restaurant.name)
+    restaurant.mobile = data.get('mobile', restaurant.mobile)
+    restaurant.address = data.get('address', restaurant.address)
+    restaurant.image_url = data.get('image_url', restaurant.image_url)
+    restaurant.cuisine = data.get('cuisine', restaurant.cuisine)
+    restaurant.open_time = data.get('open_time', restaurant.open_time)
+    restaurant.close_time = data.get('close_time', restaurant.close_time)
+    restaurant.modified_at = datetime.utcnow()  # Update the modification timestamp
+
+    # Commit changes to the database
+    db.session.commit()
+
+    return jsonify({'msg': 'Restaurant updated successfully'}), 200
+
+
+@app.route('/delivery_partner/<int:partner_id>', methods=['PUT'])
+@jwt_required()
+def update_delivery_partner(partner_id):
+    data = request.json
+
+    # Fetch the delivery partner from the database
+    partner = DeliveryPartner.query.get(partner_id)
+    if not partner:
+        return jsonify({'msg': '', 'error': 'Delivery partner not found'}), 404
+
+    # Update the delivery partner details
+    partner.username = data.get('username', partner.username)
+    partner.password = data.get('password', partner.password)
+    partner.name = data.get('name', partner.name)
+    partner.mobile = data.get('mobile', partner.mobile)
+    partner.rating = data.get('rating', partner.rating)
+    partner.modified_at = datetime.utcnow()  # Update the modification timestamp
+
+    # Commit changes to the database
+    db.session.commit()
+
+    return jsonify({'msg': 'Delivery partner updated successfully'}), 200
+
+
+@app.route('/order/<int:order_id>', methods=['PUT'])
+@jwt_required()
+def update_order_status(order_id):
+    data = request.json
+    new_status = data.get('status')
+
+    # Validate if the new status is provided
+    if not new_status:
+        return jsonify({'msg': '', 'error': 'Order status is required'}), 400
+
+    # Fetch the order from the database
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'msg': '', 'error': 'Order not found'}), 404
+
+    if new_status == 'REST_ACCEPTED':
+        delivery_partner = DeliveryPartner.query.first()
+        print(delivery_partner.id)
+        order.delivery_partner_id = delivery_partner.id
+
+    # Update the order status
+    order.status = new_status
+    order.modified_at = datetime.utcnow()  # Update the modification timestamp
+
+    # Commit changes to the database
+    db.session.commit()
+
+    return jsonify({'order_id': order.id, 'order_status': order.status, 'delivery_partner_id': order.delivery_partner_id}), 200
+
+
+@app.route('/order/<int:order_id>', methods=['GET'])
+@jwt_required()
+def get_order(order_id):
+    user_id = get_jwt_identity()
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({'status': 'error', 'data': {'msg': '', 'error': 'Order not found'}}), 404
+
+    restaurant = Restaurant.query.filter_by(id=order.restaurant_id).first()
+    dishes_ordered = DishesOrdered.query.filter_by(order_id=order.id).all()
+    dishes = [Dish.query.get(dish_ordered.dish_id) for dish_ordered in dishes_ordered]
+    delivery_partner = DeliveryPartner.query.filter_by(id=order.delivery_partner_id).first()
+    user = User.query.filter_by(id=user_id).first()
+
+    response_data = {
+        'restaurant': {
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'distance': restaurant.distance,
+            'mobile': restaurant.mobile,
+            'address': restaurant.address,
+            'rating': restaurant.rating,
+            'image_url': restaurant.image_url,
+            'reviews': restaurant.reviews,
+            'cuisine': restaurant.cuisine,
+            'offers': restaurant.offers,
+            'expected_delivery_time': restaurant.expected_delivery_time,
+            'opens_at': restaurant.open_time,
+            'closes_at': restaurant.close_time,
+        },
+        'user': {
+            'name': user.name,
+            'address': user.address,
+            'mobile': user.mobile,
+            'type': user.type
+        },
+        'order': {
+            'total': order.total,
+            'status': order.status,
+        },
+        'delivery_partner': {
+            'name': delivery_partner.name,
+            'mobile': delivery_partner.mobile,
+            'rating': delivery_partner.rating
+        },
+        'dishes': [{
+            'id': dish.id,
+            'name': dish.name,
+            'description': dish.description,
+            'image_url': dish.image_url,
+            'price': dish.price,
+            'restaurant_id': dish.restaurant_id,
+            'rating': dish.rating,
+        } for dish in dishes]
+    }
+
+    return jsonify({'data': response_data}), 200
 
 
 if __name__ == '__main__':

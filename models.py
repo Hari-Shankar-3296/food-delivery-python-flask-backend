@@ -82,6 +82,7 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer)
     user_id = db.Column(db.Integer)
+    delivery_partner_id = db.Column(db.Integer)
     total = db.Column(db.Float)
     status = db.Column(db.String, default='PAID')
 
