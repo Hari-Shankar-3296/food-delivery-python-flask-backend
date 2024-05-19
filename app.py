@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from flask_cors import CORS
+# from flask_cors import CORS
 
 from config import Config
 from models import db, User, Restaurant, Dish, DeliveryPartner, Order, DishesOrdered
@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
-CORS(app)
+# CORS(app)
 
 
 @app.route('/register/user', methods=['POST'])
@@ -438,6 +438,8 @@ def get_order(order_id):
         'order': {
             'total': order.total,
             'status': order.status,
+            'order_date': order.created_at,
+            'id': order.id,
         },
         'delivery_partner': {
             'name': delivery_partner.name,
@@ -455,7 +457,7 @@ def get_order(order_id):
         } for dish in dishes]
     }
 
-    return jsonify({'data': response_data}), 200
+    return jsonify(response_data), 200
 
 
 @app.route('/restaurant/orders/<int:restaurant_id>', methods=['GET'])
@@ -525,7 +527,7 @@ def get_orders_by_restaurant(restaurant_id):
         'orders': orders_data
     }
 
-    return jsonify({'data': response_data}), 200
+    return jsonify(response_data), 200
 
 
 @app.route('/delivery_partner/orders/<int:delivery_partner_id>', methods=['GET'])
@@ -595,7 +597,7 @@ def get_orders_by_delivery_partner(delivery_partner_id):
         'orders': orders_data
     }
 
-    return jsonify({'data': response_data}), 200
+    return jsonify(response_data), 200
 
 
 @app.route('/users/orders/<int:user_id>', methods=['GET'])
@@ -663,7 +665,7 @@ def get_orders_by_user(user_id):
         'orders': orders_data
     }
 
-    return jsonify({'data': response_data}), 200
+    return jsonify(response_data), 200
 
 
 if __name__ == '__main__':
