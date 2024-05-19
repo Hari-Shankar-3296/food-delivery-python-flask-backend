@@ -281,6 +281,7 @@ def order_now():
     restaurant_id = data.get('restaurant_id')
     dish_ids = data.get('dish_ids')
     total_price = data.get('total_price')
+    order_status = data.get('order_status')
     user_type = data.get('user_type')
 
     # Validate if all required fields are present
@@ -298,7 +299,7 @@ def order_now():
         restaurant_id=restaurant_id,
         user_id=user_id,
         total=total_price,
-        status='PAID'  # Assuming the order is paid by default
+        status=order_status
     )
 
     # Add the order to the database
