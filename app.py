@@ -265,6 +265,7 @@ def edit_dish(restaurant_id):
     dish.description = dish_data.get('description', dish.description)
     dish.image_url = dish_data.get('image_url', dish.image_url)
     dish.price = dish_data.get('price', dish.price)
+    dish.rating = dish_data.get('rating', dish.rating)
 
     # Commit changes to the database
     db.session.commit()
