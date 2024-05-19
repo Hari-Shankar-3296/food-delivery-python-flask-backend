@@ -471,7 +471,7 @@ def get_orders_by_restaurant(restaurant_id):
         return jsonify({'msg': '', 'error': 'Restaurant not found'}), 404
 
     # Fetch all orders for the given restaurant
-    orders = Order.query.filter_by(restaurant_id=restaurant_id).all()
+    orders = Order.query.filter_by(restaurant_id=restaurant_id).order_by(Order.created_at.desc()).all()
     if not orders:
         return jsonify({'msg': '', 'error': 'No orders found for the given restaurant'}), 404
 
@@ -541,7 +541,7 @@ def get_orders_by_delivery_partner(delivery_partner_id):
         return jsonify({'msg': '', 'error': 'Delivery partner not found'}), 404
 
     # Fetch all orders for the given delivery partner
-    orders = Order.query.filter_by(delivery_partner_id=delivery_partner_id).all()
+    orders = Order.query.filter_by(delivery_partner_id=delivery_partner_id).order_by(Order.created_at.desc()).all()
     if not orders:
         return jsonify({'msg': '', 'error': 'No orders found for the delivery partner'}), 404
 
@@ -609,7 +609,7 @@ def get_orders_by_user(user_id):
         return jsonify({'msg': '', 'error': 'User not found'}), 404
 
     # Fetch all orders for the given user
-    orders = Order.query.filter_by(user_id=user_id).all()
+    orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
     if not orders:
         return jsonify({'msg': '', 'error': 'No orders found for the user'}), 404
 
