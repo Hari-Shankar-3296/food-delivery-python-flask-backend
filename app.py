@@ -57,7 +57,8 @@ def login():
         user = DeliveryPartner.query.filter_by(username=username).first()
     else:
         user = User.query.filter_by(username=username).first()
-        membership_type = user.type
+        if user:
+            membership_type = user.type
 
     if not user or not user.password:
         return jsonify({'error': 'Invalid username or password.'}), 401
@@ -156,7 +157,7 @@ def get_restaurants():
     # You can use current_user_id to fetch user details if needed
 
     # Get all restaurant lists
-    restaurants = Restaurant.query.all()
+    restaurants = Restaurant.query.order_by(Restaurant.id.asc()).all()
     restaurant_list = [{"id": restaurant.id,
                         "name": restaurant.name,
                         "mobile": restaurant.mobile,
@@ -415,6 +416,9 @@ def get_order(order_id):
     delivery_partner = DeliveryPartner.query.filter_by(id=order.delivery_partner_id).first()
     user = User.query.filter_by(id=user_id).first()
 
+    if not delivery_partner:
+        delivery_partner = {'name': "", 'mobile': "", 'rating': ''}
+
     response_data = {
         'restaurant': {
             'id': restaurant.id,
@@ -443,11 +447,11 @@ def get_order(order_id):
             'order_date': order.created_at,
             'id': order.id,
         },
-        'delivery_partner': {
-            'name': delivery_partner.name,
-            'mobile': delivery_partner.mobile,
-            'rating': delivery_partner.rating
-        },
+        # 'delivery_partner': {
+        #     'name': delivery_partner.name,
+        #     'mobile': delivery_partner.mobile,
+        #     'rating': delivery_partner.rating
+        # },
         'dishes': [{
             'id': dish.id,
             'name': dish.name,
@@ -474,8 +478,9 @@ def get_orders_by_restaurant(restaurant_id):
 
     # Fetch all orders for the given restaurant
     orders = Order.query.filter_by(restaurant_id=restaurant_id).order_by(Order.created_at.desc()).all()
-    if not orders:
-        return jsonify({'msg': '', 'error': 'No orders found for the given restaurant'}), 404
+    # if not orders:
+        # return jsonify({'msg': '', 'error': 'No orders found for the given restaurant'}), 404
+
 
     orders_data = []
     for order in orders:
